@@ -56,6 +56,25 @@ export const constantRoutes = [
   },
 
   {
+    path: '/user-admin',
+    component: Layout,
+    redirect: '/user-admin/user-list',
+    name: 'userAdmin',
+    meta: {
+      title: '用户管理',
+      icon: 'excel'
+    },
+    children: [
+      {
+        path: 'user-list',
+        component: () => import('@/views/userAdmin/index'),
+        name: 'userList',
+        meta: { title: '用户列表' }
+      }
+    ]
+  },
+
+  {
     path: '/example',
     component: Layout,
     redirect: '/example/table',
