@@ -56,25 +56,6 @@ export const constantRoutes = [
   },
 
   {
-    path: '/user-admin',
-    component: Layout,
-    redirect: '/user-admin/user-list',
-    name: 'userAdmin',
-    meta: {
-      title: '用户管理',
-      icon: 'excel'
-    },
-    children: [
-      {
-        path: 'user-list',
-        component: () => import('@/views/userAdmin/index'),
-        name: 'userList',
-        meta: { title: '用户列表' }
-      }
-    ]
-  },
-
-  {
     path: '/example',
     component: Layout,
     redirect: '/example/table',
@@ -115,6 +96,24 @@ export const constantRoutes = [
  * the routes that need to be dynamically loaded based on user roles
  */
 export const asyncRoutes = [
+  {
+    path: '/user-admin',
+    component: Layout,
+    redirect: '/user-admin/user-list',
+    name: 'user_admin',
+    meta: {
+      title: '用户管理',
+      icon: 'excel'
+    },
+    children: [
+      {
+        path: 'user-list',
+        component: () => import('@/views/userAdmin/index'),
+        name: 'user_list',
+        meta: { title: '用户列表', roles: ['editor'] }
+      }
+    ]
+  },
   {
     path: '/nested',
     component: Layout,
