@@ -75,7 +75,7 @@ service.interceptors.response.use(
         })
       } else {
         Message({
-          message: data.message || 'Error',
+          message: data.message || error.message,
           type: 'error',
           duration: 5 * 1000
         })
