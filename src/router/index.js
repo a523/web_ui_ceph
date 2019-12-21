@@ -100,17 +100,18 @@ export const asyncRoutes = [
     path: '/user-admin',
     component: Layout,
     redirect: '/user-admin/user-list',
-    name: 'user_admin',
+    name: 'userAdmin',
     meta: {
       title: '用户管理',
-      icon: 'excel'
+      icon: 'excel',
+      roles: ['user_admin']
     },
     children: [
       {
         path: 'user-list',
         component: () => import('@/views/userAdmin/index'),
-        name: 'user_list',
-        meta: { title: '用户列表', roles: ['editor'] }
+        name: 'userList',
+        meta: { title: '用户列表', roles: ['user_admin'] }
       }
     ]
   },

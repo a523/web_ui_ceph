@@ -51,15 +51,18 @@ const actions = {
 
         const { name } = data
 
-        const roles = []
+        const roles = ['user_self']
         const { is_superuser } = data
         const { is_staff } = data
+        const { all_action_permissions } = data
         if (is_superuser) {
           roles.push('super')
         } else if (is_staff) {
           roles.push('admin')
         } else {
-          roles.push('ordinary')
+          for (const ap in all_action_permissions) {
+            roles.push(ap.app)
+          }
         }
         data['roles'] = roles
         // roles must be a non-empty array
@@ -81,15 +84,11 @@ const actions = {
   // user logout
   logout({ commit, state }) {
     return new Promise((resolve, reject) => {
-      // logout(state.token).then(() => {
       commit('SET_TOKEN', '')
       commit('SET_ROLES', [])
       removeToken()
       resetRouter()
       resolve()
-      // }).catch(error => {
-      //   reject(error)
-      // })
     })
   },
 
