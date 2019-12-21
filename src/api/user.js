@@ -15,9 +15,9 @@ export function getInfo() {
   })
 }
 
-export function logout() {
+export function getUserList() {
   return request({
-    url: '/user/logout',
-    method: 'post'
+    url: '/user-admin/users/',
+    method: 'get'
   })
 }
