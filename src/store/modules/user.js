@@ -1,4 +1,4 @@
-import { login, logout, getInfo } from '@/api/user'
+import { login, getInfo } from '@/api/user'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import { resetRouter } from '@/router'
 
@@ -30,8 +30,8 @@ const actions = {
     const { username, password } = userInfo
     return new Promise((resolve, reject) => {
       login({ username: username.trim(), password: password }).then(response => {
-        commit('SET_TOKEN', response.access)
         setToken(response.access)
+        commit('SET_TOKEN', response)
         resolve()
       }).catch(error => {
         reject(error)
@@ -40,22 +40,34 @@ const actions = {
   },
 
   // get user info
-  getInfo({ commit, state }) {
+  getInfo({ commit }) {
     return new Promise((resolve, reject) => {
-      getInfo(state.token).then(response => {
-        const { data } = response
+      getInfo().then(response => {
+        const data = response
 
         if (!data) {
           reject('Verification failed, please Login again.')
         }
 
-        const { roles, name, avatar } = data
+        const { name } = data
 
+        const roles = []
+        const { is_superuser } = data
+        const { is_staff } = data
+        if (is_superuser) {
+          roles.push('super')
+        } else if (is_staff) {
+          roles.push('admin')
+        } else {
+          roles.push('ordinary')
+        }
+        data['roles'] = roles
         // roles must be a non-empty array
-        if (!roles || roles.length <= 0) {
+        if (!data.roles || data.roles.length <= 0) {
           reject('getInfo: roles must be a non-null array!')
         }
 
+        const avatar = 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif'
         commit('SET_ROLES', roles)
         commit('SET_NAME', name)
         commit('SET_AVATAR', avatar)
@@ -69,15 +81,15 @@ const actions = {
   // user logout
   logout({ commit, state }) {
     return new Promise((resolve, reject) => {
-      logout(state.token).then(() => {
-        commit('SET_TOKEN', '')
-        commit('SET_ROLES', [])
-        removeToken()
-        resetRouter()
-        resolve()
-      }).catch(error => {
-        reject(error)
-      })
+      // logout(state.token).then(() => {
+      commit('SET_TOKEN', '')
+      commit('SET_ROLES', [])
+      removeToken()
+      resetRouter()
+      resolve()
+      // }).catch(error => {
+      //   reject(error)
+      // })
     })
   },
 
