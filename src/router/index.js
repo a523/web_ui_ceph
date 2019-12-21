@@ -103,7 +103,7 @@ export const asyncRoutes = [
     name: 'userAdmin',
     meta: {
       title: '用户管理',
-      icon: 'excel',
+      icon: 'useradmin',
       roles: ['user_admin']
     },
     children: [
