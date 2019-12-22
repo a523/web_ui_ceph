@@ -1,10 +1,6 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input v-model="listQuery.title" placeholder="Title" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
-      <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
-        Search
-      </el-button>
       <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">
         Add
       </el-button>
@@ -18,9 +14,8 @@
       fit
       highlight-current-row
       style="width: 100%;"
-      @sort-change="sortChange"
     >
-      <el-table-column label="ID" prop="id" sortable="custom" align="center" width="80" :class-name="getSortClass('id')">
+      <el-table-column label="ID" prop="id" align="center" width="80">
         <template slot-scope="{row}">
           <span>{{ row.id }}</span>
         </template>
@@ -38,7 +33,7 @@
       </el-table-column>
       <el-table-column label="Groups" min-width="130px" align="center">
         <template slot-scope="{row}">
-          <span>{{ row.groups | formatGroups}}</span>
+          <span>{{ row.groups | formatGroups }}</span>
         </template>
       </el-table-column>
       <el-table-column label="Permissions" min-width="150px" align="center">
@@ -75,27 +70,27 @@
 
     </el-table>
 
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getUserList" />
+    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" />
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item label="Type" prop="type" />
-        <el-form-item label="Date" prop="timestamp">
-          <el-date-picker v-model="temp.timestamp" type="datetime" placeholder="Please pick a date" />
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="temp.username" />
         </el-form-item>
-        <el-form-item label="Title" prop="title">
-          <el-input v-model="temp.title" />
+        <el-form-item label="姓" prop="firstName">
+          <el-input v-model="temp.firstName" />
         </el-form-item>
-        <el-form-item label="Status">
-          <el-select v-model="temp.status" class="filter-item" placeholder="Please select">
-            <el-option v-for="item in statusOptions" :key="item" :label="item" :value="item" />
-          </el-select>
+        <el-form-item label="名" prop="lastName">
+          <el-input v-model="temp.lastName" />
         </el-form-item>
-        <el-form-item label="Imp">
-          <el-rate v-model="temp.importance" :colors="['#99A9BF', '#F7BA2A', '#FF9900']" :max="3" style="margin-top:8px;" />
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="temp.password" />
         </el-form-item>
-        <el-form-item label="Remark">
-          <el-input v-model="temp.remark" :autosize="{ minRows: 2, maxRows: 4}" type="textarea" placeholder="Please input" />
+        <el-form-item label="确认密码" prop="passwordRp">
+          <el-input v-model="temp.passwordRp" />
+        </el-form-item>
+        <el-form-item label="管理员" prop="isStaff">
+          <el-input v-model="temp.isStaff" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -174,21 +169,20 @@ export default {
       listLoading: false,
       listQuery: {
         page: 1,
-        limit: 20,
-        importance: undefined,
-        title: undefined,
-        type: undefined,
-        sort: '+id'
+        limit: 20
       },
       statusOptions: ['published', 'draft', 'deleted'],
       temp: {
         id: undefined,
-        importance: 1,
-        remark: '',
-        timestamp: new Date(),
-        title: '',
-        type: '',
-        status: 'published'
+        username: '',
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        passwordRp: '',
+        isStaff: false,
+        groups: [],
+        actionPermissions: []
       },
       dialogFormVisible: false,
       dialogStatus: '',
@@ -199,11 +193,10 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        type: [{ required: true, message: 'type is required', trigger: 'change' }],
-        timestamp: [{ type: 'date', required: true, message: 'timestamp is required', trigger: 'change' }],
-        title: [{ required: true, message: 'title is required', trigger: 'blur' }]
-      },
-      downloadLoading: false
+        username: [{ required: true, message: 'username is required', trigger: 'change' }],
+        password: [{ type: 'password', required: true, message: 'password is required', trigger: 'change' }],
+        passwordRp: [{ type: 'password', required: true, message: 'please enter your password again', trigger: 'change' }]
+      }
     }
   },
   computed: {
@@ -216,15 +209,12 @@ export default {
   },
 
   methods: {
-
     getUserList() {
-      // this.listLoading = true
+      this.listLoading = true
       getUserList().then(response => {
         this.list = response
+        this.listLoading = false
       })
-    },
-    handleFilter() {
-      this.getUserList()
     },
     handleModifyStatus(row, status) {
       this.$message({
@@ -233,19 +223,6 @@ export default {
       })
       row.status = status
     },
-    sortChange(data) {
-      console.log('sortChange')
-      // const { prop, order } = data
-      // if (prop === 'id') {
-      //   // this.sortByID(order)
-      // }
-    },
-    // sortByID(order) {
-    //   if (order === 'ascending') {
-    //   } else {
-    //   }
-    //   this.handleFilter()
-    // },
     resetTemp() {
       this.temp = {
         id: undefined,
@@ -331,14 +308,6 @@ export default {
         this.pvData = response.data.pvData
         this.dialogPvVisible = true
       })
-    },
-    getSortClass: function(key) {
-      const sort = this.listQuery.sort
-      return sort === `+${key}`
-        ? 'ascending'
-        : sort === `-${key}`
-          ? 'descending'
-          : ''
     }
   }
 }
