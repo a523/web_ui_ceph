@@ -25,33 +25,33 @@
           <span>{{ row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Username" width="125px" align="center">
+      <el-table-column label="Username" width="130px" align="center">
         <template slot-scope="{row}">
           <span>{{ row.username }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Type" width="110px" align="center">
+      <el-table-column label="Type" width="120px" align="center">
         <template slot-scope="{row}">
           <span class="link-type" @click="handleUpdate(row)">{{ row.title }}</span>
           <el-tag :type="row.is_staff ? 'danger':''">{{ row | userTypeFilter }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Groups" min-width="150px" align="center">
+      <el-table-column label="Groups" min-width="130px" align="center">
         <template slot-scope="{row}">
-          <span>{{ row.groups }}</span>
+          <span>{{ row.groups | formatGroups}}</span>
         </template>
       </el-table-column>
       <el-table-column label="Permissions" min-width="150px" align="center">
         <template slot-scope="{row}">
-          <span>{{ row.action_permissions }}</span>
+          <span>{{ row.action_permissions | formatPermiss }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Last Login" width="155px" align="center">
+      <el-table-column label="Last Login" width="160px" align="center">
         <template slot-scope="{row}">
           <span>{{ row.last_login | parseTime }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Date Joined" width="155px" align="center">
+      <el-table-column label="Date Joined" width="160px" align="center">
         <template slot-scope="{row}">
           <span>{{ row.date_joined | parseTime() }}</span>
         </template>
@@ -131,6 +131,23 @@ export default {
   components: { Pagination },
   directives: { waves },
   filters: {
+    formatPermiss: function(permiss) {
+      let s = ''
+      for (const p of permiss) {
+        if (s) {
+          s += '; '
+        }
+        s += p.app + ': ' + p.codename
+      }
+      return s
+    },
+    formatGroups: function(groups) {
+      if (!groups || groups.length === 0) {
+        return null
+      } else {
+        return groups.join('; ')
+      }
+    },
     parseTime: fTime,
     statusFilter(status) {
       const statusMap = {
