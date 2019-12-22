@@ -2,6 +2,8 @@
  * Created by PanJiaChen on 16/11/18.
  */
 
+import moment from 'moment'
+
 /**
  * Parse the time to string
  * @param {(Object|string|number)} time
@@ -104,4 +106,10 @@ export function param2Obj(url) {
         .replace(/\+/g, ' ') +
       '"}'
   )
+}
+
+export function fTime(timeStr, formatStr = 'YYYY-MM-DD HH:mm:ss') {
+  if (timeStr) {
+    return moment(timeStr).format(formatStr)
+  }
 }

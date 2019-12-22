@@ -5,9 +5,6 @@
       <el-select v-model="listQuery.importance" placeholder="Imp" clearable style="width: 90px" class="filter-item">
         <el-option v-for="item in importanceOptions" :key="item" :label="item" :value="item" />
       </el-select>
-      <el-select v-model="listQuery.type" placeholder="Type" clearable class="filter-item" style="width: 130px">
-        <el-option v-for="item in calendarTypeOptions" :key="item.key" :label="item.display_name+'('+item.key+')'" :value="item.key" />
-      </el-select>
       <el-select v-model="listQuery.sort" style="width: 140px" class="filter-item" @change="handleFilter">
         <el-option v-for="item in sortOptions" :key="item.key" :label="item.label" :value="item.key" />
       </el-select>
@@ -17,9 +14,6 @@
       <el-button class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleCreate">
         Add
       </el-button>
-      <el-checkbox v-model="showReviewer" class="filter-item" style="margin-left:15px;" @change="tableKey=tableKey+1">
-        reviewer
-      </el-checkbox>
     </div>
 
     <el-table
@@ -37,46 +31,38 @@
           <span>{{ row.id }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Date" width="150px" align="center">
+      <el-table-column label="Username" width="125px" align="center">
         <template slot-scope="{row}">
-          <span>{{ row.timestamp | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ row.username }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Title" min-width="150px">
+      <el-table-column label="Type" width="110px" align="center">
         <template slot-scope="{row}">
           <span class="link-type" @click="handleUpdate(row)">{{ row.title }}</span>
-          <el-tag>{{ row.type | typeFilter }}</el-tag>
+          <el-tag :type="row.is_staff ? 'danger':''">{{ row | userTypeFilter }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Author" width="110px" align="center">
+      <el-table-column label="Groups" min-width="150px" align="center">
         <template slot-scope="{row}">
-          <span>{{ row.author }}</span>
+          <span>{{ row.groups }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="showReviewer" label="Reviewer" width="110px" align="center">
+      <el-table-column label="Permissions" min-width="150px" align="center">
         <template slot-scope="{row}">
-          <span style="color:red;">{{ row.reviewer }}</span>
+          <span>{{ row.action_permissions }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Imp" width="80px">
+      <el-table-column label="Last Login" width="155px" align="center">
         <template slot-scope="{row}">
-          <svg-icon v-for="n in + row.importance" :key="n" icon-class="star" class="meta-item__icon" />
+          <span>{{ row.last_login | parseTime }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Readings" align="center" width="95">
+      <el-table-column label="Date Joined" width="155px" align="center">
         <template slot-scope="{row}">
-          <span v-if="row.pageviews" class="link-type" @click="handleFetchPv(row.pageviews)">{{ row.pageviews }}</span>
-          <span v-else>0</span>
+          <span>{{ row.date_joined | parseTime() }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Status" class-name="status-col" width="100">
-        <template slot-scope="{row}">
-          <el-tag :type="row.status | statusFilter">
-            {{ row.status }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="Actions" align="center" width="230" class-name="small-padding fixed-width">
+      <el-table-column label="Actions" align="center" width="350px" class-name="small-padding fixed-width">
         <template slot-scope="{row}">
           <el-button type="primary" size="mini" @click="handleUpdate(row)">
             Edit
@@ -92,17 +78,14 @@
           </el-button>
         </template>
       </el-table-column>
+
     </el-table>
 
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
+    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getUserList" />
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
-        <el-form-item label="Type" prop="type">
-          <el-select v-model="temp.type" class="filter-item" placeholder="Please select">
-            <el-option v-for="item in calendarTypeOptions" :key="item.key" :label="item.display_name" :value="item.key" />
-          </el-select>
-        </el-form-item>
+        <el-form-item label="Type" prop="type" />
         <el-form-item label="Date" prop="timestamp">
           <el-date-picker v-model="temp.timestamp" type="datetime" placeholder="Please pick a date" />
         </el-form-item>
@@ -144,29 +127,17 @@
 </template>
 
 <script>
-import { fetchList, fetchPv, createArticle, updateArticle } from '@/api/article'
+import { getUserList } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
-import { parseTime } from '@/utils'
+import { fTime } from '@/utils'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
-
-const calendarTypeOptions = [
-  { key: 'CN', display_name: 'China' },
-  { key: 'US', display_name: 'USA' },
-  { key: 'JP', display_name: 'Japan' },
-  { key: 'EU', display_name: 'Eurozone' }
-]
-
-// arr to obj, such as { CN : "China", US : "USA" }
-const calendarTypeKeyValue = calendarTypeOptions.reduce((acc, cur) => {
-  acc[cur.key] = cur.display_name
-  return acc
-}, {})
 
 export default {
   name: 'ComplexTable',
   components: { Pagination },
   directives: { waves },
   filters: {
+    parseTime: fTime,
     statusFilter(status) {
       const statusMap = {
         published: 'success',
@@ -175,16 +146,21 @@ export default {
       }
       return statusMap[status]
     },
-    typeFilter(type) {
-      return calendarTypeKeyValue[type]
+    userTypeFilter(user) {
+      if (user.is_superuser) {
+        return '超级用户'
+      } else if (user.is_staff) {
+        return '管理员'
+      } else {
+        return '普通用户'
+      }
     }
   },
   data() {
     return {
       tableKey: 0,
-      list: null,
-      total: 0,
-      listLoading: true,
+      list: [],
+      listLoading: false,
       listQuery: {
         page: 1,
         limit: 20,
@@ -194,10 +170,8 @@ export default {
         sort: '+id'
       },
       importanceOptions: [1, 2, 3],
-      calendarTypeOptions,
       sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
       statusOptions: ['published', 'draft', 'deleted'],
-      showReviewer: false,
       temp: {
         id: undefined,
         importance: 1,
@@ -223,25 +197,25 @@ export default {
       downloadLoading: false
     }
   },
-  created() {
-    // this.getList()
+  computed: {
+    total: function() {
+      return this.list ? this.list.length : 0
+    }
   },
-  methods: {
-    getList() {
-      this.listLoading = true
-      fetchList(this.listQuery).then(response => {
-        this.list = response.data.items
-        this.total = response.data.total
+  created() {
+    this.getUserList()
+  },
 
-        // Just to simulate the time of the request
-        setTimeout(() => {
-          this.listLoading = false
-        }, 1.5 * 1000)
+  methods: {
+
+    getUserList() {
+      // this.listLoading = true
+      getUserList().then(response => {
+        this.list = response
       })
     },
     handleFilter() {
-      this.listQuery.page = 1
-      this.getList()
+      this.getUserList()
     },
     handleModifyStatus(row, status) {
       this.$message({
@@ -251,19 +225,18 @@ export default {
       row.status = status
     },
     sortChange(data) {
-      const { prop, order } = data
-      if (prop === 'id') {
-        this.sortByID(order)
-      }
+      console.log('sortChange')
+      // const { prop, order } = data
+      // if (prop === 'id') {
+      //   // this.sortByID(order)
+      // }
     },
-    sortByID(order) {
-      if (order === 'ascending') {
-        this.listQuery.sort = '+id'
-      } else {
-        this.listQuery.sort = '-id'
-      }
-      this.handleFilter()
-    },
+    // sortByID(order) {
+    //   if (order === 'ascending') {
+    //   } else {
+    //   }
+    //   this.handleFilter()
+    // },
     resetTemp() {
       this.temp = {
         id: undefined,
@@ -349,29 +322,6 @@ export default {
         this.pvData = response.data.pvData
         this.dialogPvVisible = true
       })
-    },
-    // handleDownload() {
-    //   this.downloadLoading = true
-    //     import('@/vendor/Export2Excel').then(excel => {
-    //       const tHeader = ['timestamp', 'title', 'type', 'importance', 'status']
-    //       const filterVal = ['timestamp', 'title', 'type', 'importance', 'status']
-    //       const data = this.formatJson(filterVal, this.list)
-    //       excel.export_json_to_excel({
-    //         header: tHeader,
-    //         data,
-    //         filename: 'table-list'
-    //       })
-    //       this.downloadLoading = false
-    //     })
-    // },
-    formatJson(filterVal, jsonData) {
-      return jsonData.map(v => filterVal.map(j => {
-        if (j === 'timestamp') {
-          return parseTime(v[j])
-        } else {
-          return v[j]
-        }
-      }))
     },
     getSortClass: function(key) {
       const sort = this.listQuery.sort
