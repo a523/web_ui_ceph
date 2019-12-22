@@ -21,3 +21,11 @@ export function getUserList() {
     method: 'get'
   })
 }
+
+export function addUser(data) {
+  return request({
+    url: '/user-admin/users/',
+    data: data,
+    method: 'post'
+  })
+}
