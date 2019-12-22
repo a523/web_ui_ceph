@@ -73,9 +73,15 @@
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" />
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="70px" style="width: 400px; margin-left:50px;">
+      <el-form ref="dataForm" :rules="rules" status-icon :model="temp" label-position="left" label-width="105px" style="width: 61.8%; margin-left:10%;">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="temp.username" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="temp.password" show-password placeholder="请输入密码" />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="passwordRp">
+          <el-input v-model="temp.passwordRp" show-password placeholder="请再次输入密码" />
         </el-form-item>
         <el-form-item label="姓" prop="firstName">
           <el-input v-model="temp.firstName" />
@@ -83,14 +89,11 @@
         <el-form-item label="名" prop="lastName">
           <el-input v-model="temp.lastName" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="temp.password" />
-        </el-form-item>
-        <el-form-item label="确认密码" prop="passwordRp">
-          <el-input v-model="temp.passwordRp" />
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="temp.email" />
         </el-form-item>
         <el-form-item label="管理员" prop="isStaff">
-          <el-input v-model="temp.isStaff" />
+          <el-switch v-model="temp.isStaff" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -163,6 +166,29 @@ export default {
     }
   },
   data() {
+    const validatePassword = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error('password is required'))
+      } else if (value.length < 6) {
+        callback(new Error('The password can not be less than 6 digits'))
+      } else {
+        if (this.temp.passwordRp !== '') {
+          this.$refs.dataForm.validateField('passwordRp')
+        }
+        callback()
+      }
+    }
+    const validatePasswordRp = (rule, value, callback) => {
+      if (!value) {
+        callback(new Error('please enter your password again'))
+      } else if (value.length < 6) {
+        callback(new Error('The password can not be less than 6 digits'))
+      } else if (value !== this.temp.password) {
+        callback(new Error('The password is not the same as before'))
+      } else {
+        callback()
+      }
+    }
     return {
       tableKey: 0,
       list: [],
@@ -193,9 +219,15 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        username: [{ required: true, message: 'username is required', trigger: 'change' }],
-        password: [{ type: 'password', required: true, message: 'password is required', trigger: 'change' }],
-        passwordRp: [{ type: 'password', required: true, message: 'please enter your password again', trigger: 'change' }]
+        username: [
+          { required: true, message: 'username is required', trigger: 'change' },
+          { min: 3, max: 16, trigger: 'blur' }
+        ],
+        password: [{ type: 'password', required: true, trigger: 'change', validator: validatePassword }],
+        passwordRp: [{ type: 'password', required: true, validator: validatePasswordRp, trigger: 'change' }],
+        email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
+        firstName: [{ max: 16, trigger: 'change' }],
+        lastName: [{ max: 16, trigger: 'change' }]
       }
     }
   },
@@ -205,11 +237,11 @@ export default {
     }
   },
   created() {
-    this.getUserList()
+    this.getList()
   },
 
   methods: {
-    getUserList() {
+    getList() {
       this.listLoading = true
       getUserList().then(response => {
         this.list = response
@@ -312,3 +344,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+  .line{
+    text-align: center;
+  }
+</style>
