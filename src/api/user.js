@@ -10,7 +10,7 @@ export function login(data) {
 
 export function getInfo() {
   return request({
-    url: '/user-admin/self/',
+    url: '/user-admin/user-self/',
     method: 'get'
   })
 }
@@ -27,5 +27,12 @@ export function addUser(data) {
     url: '/user-admin/users/',
     data: data,
     method: 'post'
+  })
+}
+
+export function deleteUser(id) {
+  return request({
+    url: '/user-admin/users/' + id + '/',
+    method: 'delete'
   })
 }

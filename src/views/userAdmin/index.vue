@@ -59,9 +59,6 @@
           <el-button v-if="row.status!='published'" size="mini" type="success" @click="handleModifyStatus(row,'published')">
             Publish
           </el-button>
-          <el-button v-if="row.status!='draft'" size="mini" @click="handleModifyStatus(row,'draft')">
-            Draft
-          </el-button>
           <el-button v-if="row.status!='deleted'" size="mini" type="danger" @click="handleModifyStatus(row,'deleted')">
             Delete
           </el-button>
@@ -119,7 +116,7 @@
 </template>
 
 <script>
-import { getUserList, addUser } from '@/api/user'
+import { getUserList, addUser, deleteUser } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
 import { fTime } from '@/utils'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
@@ -249,11 +246,18 @@ export default {
       })
     },
     handleModifyStatus(row, status) {
-      this.$message({
-        message: '操作Success',
-        type: 'success'
+      this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.handleDelete(row)
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
       })
-      row.status = status
     },
     resetTemp() {
       this.temp = {
@@ -288,16 +292,14 @@ export default {
             password: this.temp.password,
             is_staff: this.temp.isStaff,
             groups: this.temp.groups,
-            action_permissions: this.temp.actionPermissions,
+            action_permissions: this.temp.actionPermissions
           }
           addUser(data).then(() => {
             this.getList()
             this.dialogFormVisible = false
-            this.$notify({
-              title: 'Success',
+            this.$message({
               message: 'Created Successfully',
-              type: 'success',
-              duration: 2000
+              type: 'success'
             })
           })
         }
@@ -337,14 +339,20 @@ export default {
       })
     },
     handleDelete(row) {
-      this.$notify({
-        title: 'Success',
-        message: 'Delete Successfully',
-        type: 'success',
-        duration: 2000
+      const id = row.id
+      deleteUser(id).then(() => {
+        row.status = status
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        })
+        this.getList()
+      }).catch((data) => {
+        this.$message({
+          type: 'error',
+          message: data.detail || '删除失败!'
+        })
       })
-      const index = this.list.indexOf(row)
-      this.list.splice(index, 1)
     },
     handleFetchPv(pv) {
       fetchPv(pv).then(response => {
