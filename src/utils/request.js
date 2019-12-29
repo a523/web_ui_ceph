@@ -16,15 +16,11 @@ service.interceptors.request.use(
     // do something before request is sent
 
     if (store.getters.token) {
-      // let each request carry token
-      // ['X-Token'] is a custom headers key
-      // please modify it according to the actual situation
       config.headers.Authorization = 'Bearer' + ' ' + getToken()
     }
     return config
   },
   error => {
-    // do something with request error
     console.log(error) // for debug
     return Promise.reject(error)
   }
@@ -46,11 +42,12 @@ service.interceptors.response.use(
     return response.data
   },
   error => {
+    // 401、403、500等异常统一处理， 其他一起抛出视图处理
     const resp = error.response
     const data = resp.data
     if (resp.status >= 400) {
       if (resp.status === 401) {
-        if (resp.config.url === '/dev-api/api/token/') {
+        if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/token/') {
           Message({
             message: data.detail || error.message,
             type: 'error',
@@ -73,14 +70,14 @@ service.interceptors.response.use(
           type: 'error',
           duration: 5 * 1000
         })
-      } else {
+      } else if (resp.status >= 500) {
         Message({
           message: data.message || error.message,
           type: 'error',
           duration: 5 * 1000
         })
       }
-      return Promise.reject(new Error(data.message || 'Error'))
+      return Promise.reject(new Error(data))
     }
     Message({
       message: error.message,
