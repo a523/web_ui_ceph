@@ -21,3 +21,18 @@ export function getUserList() {
     method: 'get'
   })
 }
+
+export function addUser(data) {
+  return request({
+    url: '/user-admin/users/',
+    data: data,
+    method: 'post'
+  })
+}
+
+export function deleteUser(id) {
+  return request({
+    url: '/user-admin/users/' + id + '/',
+    method: 'delete'
+  })
+}

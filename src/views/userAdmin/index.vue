@@ -59,9 +59,6 @@
           <el-button v-if="row.status!='published'" size="mini" type="success" @click="handleModifyStatus(row,'published')">
             Publish
           </el-button>
-          <el-button v-if="row.status!='draft'" size="mini" @click="handleModifyStatus(row,'draft')">
-            Draft
-          </el-button>
           <el-button v-if="row.status!='deleted'" size="mini" type="danger" @click="handleModifyStatus(row,'deleted')">
             Delete
           </el-button>
@@ -75,22 +72,22 @@
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" status-icon :model="temp" label-position="left" label-width="105px" style="width: 61.8%; margin-left:10%;">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="temp.username" />
+          <el-input v-model="temp.username" placeholder="user name" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="temp.password" show-password placeholder="请输入密码" />
+          <el-input v-model="temp.password" show-password placeholder="please enter your password" />
         </el-form-item>
         <el-form-item label="确认密码" prop="passwordRp">
-          <el-input v-model="temp.passwordRp" show-password placeholder="请再次输入密码" />
+          <el-input v-model="temp.passwordRp" show-password placeholder="please enter your password again" />
         </el-form-item>
         <el-form-item label="姓" prop="firstName">
-          <el-input v-model="temp.firstName" />
+          <el-input v-model="temp.firstName" placeholder="first name" />
         </el-form-item>
         <el-form-item label="名" prop="lastName">
-          <el-input v-model="temp.lastName" />
+          <el-input v-model="temp.lastName" placeholder="last name" />
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="temp.email" />
+          <el-input v-model="temp.email" placeholder="email" />
         </el-form-item>
         <el-form-item label="管理员" prop="isStaff">
           <el-switch v-model="temp.isStaff" />
@@ -119,7 +116,7 @@
 </template>
 
 <script>
-import { getUserList } from '@/api/user'
+import { getUserList, addUser, deleteUser } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
 import { fTime } from '@/utils'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
@@ -249,21 +246,31 @@ export default {
       })
     },
     handleModifyStatus(row, status) {
-      this.$message({
-        message: '操作Success',
-        type: 'success'
+      this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.handleDelete(row)
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
       })
-      row.status = status
     },
     resetTemp() {
       this.temp = {
         id: undefined,
-        importance: 1,
-        remark: '',
-        timestamp: new Date(),
-        title: '',
-        status: 'published',
-        type: ''
+        username: '',
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        passwordRp: '',
+        isStaff: false,
+        groups: [],
+        actionPermissions: []
       }
     },
     handleCreate() {
@@ -277,16 +284,22 @@ export default {
     createData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          this.temp.id = parseInt(Math.random() * 100) + 1024 // mock a id
           this.temp.author = 'vue-element-admin'
-          createArticle(this.temp).then(() => {
-            this.list.unshift(this.temp)
+          const data = {
+            username: this.temp.username,
+            first_name: this.temp.firstName,
+            last_name: this.temp.lastName,
+            password: this.temp.password,
+            is_staff: this.temp.isStaff,
+            groups: this.temp.groups,
+            action_permissions: this.temp.actionPermissions
+          }
+          addUser(data).then(() => {
+            this.getList()
             this.dialogFormVisible = false
-            this.$notify({
-              title: 'Success',
+            this.$message({
               message: 'Created Successfully',
-              type: 'success',
-              duration: 2000
+              type: 'success'
             })
           })
         }
@@ -326,14 +339,20 @@ export default {
       })
     },
     handleDelete(row) {
-      this.$notify({
-        title: 'Success',
-        message: 'Delete Successfully',
-        type: 'success',
-        duration: 2000
+      const id = row.id
+      deleteUser(id).then(() => {
+        row.status = status
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        })
+        this.getList()
+      }).catch((data) => {
+        this.$message({
+          type: 'error',
+          message: data.detail || '删除失败!'
+        })
       })
-      const index = this.list.indexOf(row)
-      this.list.splice(index, 1)
     },
     handleFetchPv(pv) {
       fetchPv(pv).then(response => {
