@@ -36,3 +36,11 @@ export function deleteUser(id) {
     method: 'delete'
   })
 }
+
+export function updateUser(id, data) {
+  return request({
+    url: '/user-admin/users/' + id + '/',
+    data: data,
+    method: 'put'
+  })
+}

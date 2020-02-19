@@ -56,9 +56,6 @@
           <el-button type="primary" size="mini" @click="handleUpdate(row)">
             Edit
           </el-button>
-          <el-button v-if="row.status!='published'" size="mini" type="success" @click="handleModifyStatus(row,'published')">
-            Publish
-          </el-button>
           <el-button v-if="row.status!='deleted'" size="mini" type="danger" @click="handleModifyStatus(row,'deleted')">
             Delete
           </el-button>
@@ -74,10 +71,10 @@
         <el-form-item label="用户名" prop="username">
           <el-input v-model="temp.username" placeholder="user name" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
+        <el-form-item v-if="showPwInput" label="密码" prop="password">
           <el-input v-model="temp.password" show-password placeholder="please enter your password" />
         </el-form-item>
-        <el-form-item label="确认密码" prop="passwordRp">
+        <el-form-item v-if="showPwInput" label="确认密码" prop="passwordRp">
           <el-input v-model="temp.passwordRp" show-password placeholder="please enter your password again" />
         </el-form-item>
         <el-form-item label="姓" prop="firstName">
@@ -89,8 +86,11 @@
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="temp.email" placeholder="email" />
         </el-form-item>
-        <el-form-item label="管理员" prop="isStaff">
+        <el-form-item label="普通管理员" prop="isStaff">
           <el-switch v-model="temp.isStaff" />
+        </el-form-item>
+        <el-form-item >
+          <el-button type="text" @click="updatePw = !updatePw">{{ showPwInput ? "不更改密码" : "更改用户密码" }}</el-button>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -116,7 +116,7 @@
 </template>
 
 <script>
-import { getUserList, addUser, deleteUser } from '@/api/user'
+import { getUserList, addUser, deleteUser, updateUser } from '@/api/user'
 import waves from '@/directive/waves' // waves directive
 import { fTime } from '@/utils'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
@@ -201,14 +201,16 @@ export default {
         firstName: '',
         lastName: '',
         email: '',
-        password: '',
-        passwordRp: '',
+        password: undefined,
+        passwordRp: undefined,
         isStaff: false,
+        isActive: false,
         groups: [],
         actionPermissions: []
       },
       dialogFormVisible: false,
       dialogStatus: '',
+      updatePw: false,
       textMap: {
         update: 'Edit',
         create: 'Create'
@@ -231,6 +233,13 @@ export default {
   computed: {
     total: function() {
       return this.list ? this.list.length : 0
+    },
+    showPwInput: function() {
+      if (this.dialogStatus !== 'update') {
+        return true
+      } else {
+        return this.updatePw
+      }
     }
   },
   created() {
@@ -266,12 +275,14 @@ export default {
         firstName: '',
         lastName: '',
         email: '',
-        password: '',
-        passwordRp: '',
+        password: undefined,
+        passwordRp: undefined,
         isStaff: false,
+        isActive: false,
         groups: [],
         actionPermissions: []
       }
+      this.updatePw = false
     },
     handleCreate() {
       this.resetTemp()
@@ -306,8 +317,15 @@ export default {
       })
     },
     handleUpdate(row) {
-      this.temp = Object.assign({}, row) // copy obj
-      this.temp.timestamp = new Date(this.temp.timestamp)
+      this.temp.id = row.id
+      this.temp.username = row.username
+      this.temp.firstName = row.first_name
+      this.temp.lastName = row.last_name
+      this.temp.email = row.email
+      this.temp.isStaff = row.is_staff
+      this.temp.groups = row.groups
+      this.temp.actionPermissions = row.action_permissions
+      this.temp.isActive = row.is_active
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
       this.$nextTick(() => {
@@ -318,21 +336,21 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           const tempData = Object.assign({}, this.temp)
-          tempData.timestamp = +new Date(tempData.timestamp) // change Thu Nov 30 2017 16:41:05 GMT+0800 (CST) to 1512031311464
-          updateArticle(tempData).then(() => {
-            for (const v of this.list) {
-              if (v.id === this.temp.id) {
-                const index = this.list.indexOf(v)
-                this.list.splice(index, 1, this.temp)
-                break
-              }
-            }
+          const id = this.temp.id
+          delete tempData.id
+          updateUser(id, tempData).then(() => {
             this.dialogFormVisible = false
             this.$notify({
               title: 'Success',
               message: 'Update Successfully',
               type: 'success',
               duration: 2000
+            })
+            this.getList()
+          }).catch((data) => {
+            this.$message({
+              type: 'error',
+              message: data.detail || '修改失败!'
             })
           })
         }
@@ -352,12 +370,6 @@ export default {
           type: 'error',
           message: data.detail || '删除失败!'
         })
-      })
-    },
-    handleFetchPv(pv) {
-      fetchPv(pv).then(response => {
-        this.pvData = response.data.pvData
-        this.dialogPvVisible = true
       })
     }
   }

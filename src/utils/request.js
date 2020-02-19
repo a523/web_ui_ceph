@@ -44,7 +44,7 @@ service.interceptors.response.use(
   error => {
     // 401、403、500等异常统一处理， 其他一起抛出视图处理
     const resp = error.response
-    const data = resp.data
+    const data = resp.data || undefined
     if (resp.status >= 400) {
       if (resp.status === 401) {
         if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/token/') {
