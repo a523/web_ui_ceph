@@ -90,7 +90,7 @@
           <el-switch v-model="temp.isStaff" />
         </el-form-item>
         <el-form-item >
-          <el-button type="text" @click="updatePw = !updatePw">{{ showPwInput ? "不更改密码" : "更改用户密码" }}</el-button>
+          <el-button v-if="dialogStatus === 'update'" type="text" @click="updatePw = !updatePw">{{ showPwInput ? "不更改密码" : "更改用户密码" }}</el-button>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -328,6 +328,7 @@ export default {
       this.temp.isActive = row.is_active
       this.dialogStatus = 'update'
       this.dialogFormVisible = true
+      this.updatePw = false
       this.$nextTick(() => {
         this.$refs['dataForm'].clearValidate()
       })
@@ -335,10 +336,18 @@ export default {
     updateData() {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
-          const tempData = Object.assign({}, this.temp)
-          const id = this.temp.id
-          delete tempData.id
-          updateUser(id, tempData).then(() => {
+          const tempData = {
+            'username': this.temp.username,
+            'password': this.temp.password,
+            'first_name': this.temp.firstName,
+            'last_name': this.temp.lastName,
+            'email': this.temp.email,
+            'is_staff': this.temp.isStaff,
+            'groups': this.temp.groups,
+            'actionPermissions': this.temp.actionPermissions,
+            'is_active': this.temp.isActive
+          }
+          updateUser(this.temp.id, tempData).then(() => {
             this.dialogFormVisible = false
             this.$notify({
               title: 'Success',
@@ -365,10 +374,10 @@ export default {
           message: '删除成功!'
         })
         this.getList()
-      }).catch((data) => {
+      }).catch((err) => {
         this.$message({
           type: 'error',
-          message: data.detail || '删除失败!'
+          message: err.detail || '删除失败!'
         })
       })
     }

@@ -49,41 +49,29 @@ service.interceptors.response.use(
       if (resp.status === 401) {
         if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/token/') {
           Message({
-            message: data.detail || error.message,
+            message: data.detail || '请先登录！',
             type: 'error',
             duration: 5 * 1000
           })
-          return Promise.reject(new Error(data.detail || 'Error'))
-        }
-        MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
-          confirmButtonText: 'Re-Login',
-          cancelButtonText: 'Cancel',
-          type: 'warning'
-        }).then(() => {
-          store.dispatch('user/resetToken').then(() => {
-            location.reload()
+          return Promise.reject(new Error(data.detail || 'Not logged in'))
+        } else {
+          MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
+            confirmButtonText: 'Re-Login',
+            cancelButtonText: 'Cancel',
+            type: 'warning'
+          }).then(() => {
+            store.dispatch('user/resetToken').then(() => {
+              location.reload()
+            })
           })
-        })
+        }
       } else if (resp.status === 403) {
-        Message({
-          message: data.message || 'Permission denied',
-          type: 'error',
-          duration: 5 * 1000
-        })
+        error.detail = data.detail || 'Permission denied'
       } else if (resp.status >= 500) {
-        Message({
-          message: data.message || error.message,
-          type: 'error',
-          duration: 5 * 1000
-        })
+        error.detail = data.detail || '内部错误，请报告管理员'
+        console.debug(error)
       }
-      return Promise.reject(new Error(data))
     }
-    Message({
-      message: error.message,
-      type: 'error',
-      duration: 5 * 1000
-    })
     return Promise.reject(error)
   }
 )
