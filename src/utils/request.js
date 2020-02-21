@@ -44,33 +44,31 @@ service.interceptors.response.use(
   error => {
     // 401、403、500等异常统一处理， 其他一起抛出视图处理
     const resp = error.response
-    const data = resp.data || undefined
-    if (resp.status >= 400) {
-      if (resp.status === 401) {
-        if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/token/') {
-          Message({
-            message: data.detail || '请先登录！',
-            type: 'error',
-            duration: 5 * 1000
+    if (resp.status === 401) {
+      if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/token/') {
+        Message({
+          message: resp.data.detail || error.message,
+          type: 'error',
+          duration: 5 * 1000
+        })
+        return Promise.reject(new Error(resp.data.detail || error.message))
+      } else {
+        // 刷新token
+        MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
+          confirmButtonText: 'Re-Login',
+          cancelButtonText: 'Cancel',
+          type: 'warning'
+        }).then(() => {
+          store.dispatch('user/resetToken').then(() => {
+            location.reload()
           })
-          return Promise.reject(new Error(data.detail || 'Not logged in'))
-        } else {
-          MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
-            confirmButtonText: 'Re-Login',
-            cancelButtonText: 'Cancel',
-            type: 'warning'
-          }).then(() => {
-            store.dispatch('user/resetToken').then(() => {
-              location.reload()
-            })
-          })
-        }
-      } else if (resp.status === 403) {
-        error.detail = data.detail || 'Permission denied'
-      } else if (resp.status >= 500) {
-        error.detail = data.detail || '内部错误，请报告管理员'
-        console.debug(error)
+        })
       }
+    } else if (resp.status === 403) {
+      error.detail = resp.data.detail || 'Permission denied'
+    } else if (resp.status >= 500) {
+      error.detail = resp.data || '内部错误，请报告管理员'
+      console.debug(error)
     }
     return Promise.reject(error)
   }
