@@ -1,17 +1,21 @@
 import { login, getInfo } from '@/api/user'
-import { getToken, setToken, removeToken } from '@/utils/auth'
+import { getAccessToken, setAccessToken, getRefreshToken, setRefreshToken, removeToken, updateLastTime, removeLastTime } from '@/utils/auth'
 import { resetRouter } from '@/router'
 
 const state = {
-  token: getToken(),
+  access: getAccessToken(),
+  refresh: getRefreshToken(),
   name: '',
   avatar: '',
   roles: []
 }
 
 const mutations = {
-  SET_TOKEN: (state, token) => {
-    state.token = token
+  SET_ACCESS_TOKEN: (state, access) => {
+    state.access = access
+  },
+  SET_REFRESH_TOKEN: (state, access) => {
+    state.refresh = access
   },
   SET_NAME: (state, name) => {
     state.name = name
@@ -30,8 +34,11 @@ const actions = {
     const { username, password } = userInfo
     return new Promise((resolve, reject) => {
       login({ username: username.trim(), password: password }).then(response => {
-        setToken(response.access)
-        commit('SET_TOKEN', response)
+        setAccessToken(response.access)
+        setRefreshToken(response.refresh)
+        updateLastTime()
+        commit('SET_ACCESS_TOKEN', response.access)
+        commit('SET_REFRESH_TOKEN', response.refresh)
         resolve()
       }).catch(error => {
         reject(error)
@@ -84,10 +91,12 @@ const actions = {
   // user logout
   logout({ commit, state }) {
     return new Promise((resolve, reject) => {
-      commit('SET_TOKEN', '')
+      commit('SET_ACCESS_TOKEN', '')
+      commit('SET_REFRESH_TOKEN', '')
       commit('SET_ROLES', [])
       removeToken()
       resetRouter()
+      removeLastTime()
       resolve()
     })
   },
@@ -95,7 +104,8 @@ const actions = {
   // remove token
   resetToken({ commit }) {
     return new Promise(resolve => {
-      commit('SET_TOKEN', '')
+      commit('SET_ACCESS_TOKEN', '')
+      commit('SET_REFRESH_TOKEN', '')
       commit('SET_ROLES', [])
       removeToken()
       resolve()

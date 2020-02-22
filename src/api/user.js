@@ -8,6 +8,14 @@ export function login(data) {
   })
 }
 
+export function refreshToken(data) {
+  return request({
+    url: '/api/refresh/',
+    method: 'post',
+    data
+  })
+}
+
 export function getInfo() {
   return request({
     url: '/user-admin/user-self/',

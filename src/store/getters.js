@@ -1,7 +1,7 @@
 const getters = {
   sidebar: state => state.app.sidebar,
   device: state => state.app.device,
-  token: state => state.user.token,
+  access: state => state.user.access,
   avatar: state => state.user.avatar,
   name: state => state.user.username,
   roles: state => state.user.roles,

@@ -1,7 +1,8 @@
 import axios from 'axios'
 import { MessageBox, Message } from 'element-ui'
 import store from '@/store'
-import { getToken } from '@/utils/auth'
+import { getAccessToken, getRefreshToken, setAccessToken, updateLastTime, inExpiration } from '@/utils/auth'
+import { refreshToken } from '@/api/user'
 
 // create an axios instance
 const service = axios.create({
@@ -15,8 +16,8 @@ service.interceptors.request.use(
   config => {
     // do something before request is sent
 
-    if (store.getters.token) {
-      config.headers.Authorization = 'Bearer' + ' ' + getToken()
+    if (store.getters.access) {
+      config.headers.Authorization = 'Bearer' + ' ' + getAccessToken()
     }
     return config
   },
@@ -46,29 +47,51 @@ service.interceptors.response.use(
     const resp = error.response
     if (resp.status === 401) {
       if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/token/') {
+        // 登录的时候，密码错误之类的
         Message({
-          message: resp.data.detail || error.message,
+          message: resp.data.detail,
           type: 'error',
           duration: 5 * 1000
         })
         return Promise.reject(new Error(resp.data.detail || error.message))
       } else {
-        // 刷新token
-        MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
-          confirmButtonText: 'Re-Login',
-          cancelButtonText: 'Cancel',
-          type: 'warning'
-        }).then(() => {
-          store.dispatch('user/resetToken').then(() => {
-            location.reload()
+        if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/refresh/') {
+          MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
+            confirmButtonText: 'Re-Login',
+            cancelButtonText: 'Cancel',
+            type: 'warning'
+          }).then(() => {
+            store.dispatch('user/resetToken').then(() => {
+              location.reload()
+            })
           })
-        })
+        } else {
+          // 刷新token
+          if (inExpiration()) {
+            const refresh = getRefreshToken()
+            refreshToken({ 'refresh': refresh }).then(rsp => {
+              setAccessToken(rsp.access)
+              resp.config.url = resp.config.url.replace(process.env.VUE_APP_BASE_API, '')
+              return service(resp.config)
+            })
+          } else {
+            // 重新登录
+            store.dispatch('user/resetToken').then(() => {
+              console.log(333)
+              location.reload()
+            })
+          }
+        }
       }
     } else if (resp.status === 403) {
       error.detail = resp.data.detail || 'Permission denied'
+      updateLastTime()
     } else if (resp.status >= 500) {
       error.detail = resp.data || '内部错误，请报告管理员'
       console.debug(error)
+      updateLastTime()
+    } else {
+      updateLastTime()
     }
     return Promise.reject(error)
   }
