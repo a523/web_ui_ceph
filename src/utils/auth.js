@@ -1,5 +1,7 @@
+import Cookies from 'js-cookie'
+
 export function getAccessToken() {
-  return sessionStorage.getItem('access')
+  return Cookies.get('access')
 }
 
 export function getRefreshToken() {
@@ -7,7 +9,7 @@ export function getRefreshToken() {
 }
 
 export function setAccessToken(access) {
-  sessionStorage.setItem('access', access)
+  return Cookies.set('access', access)
 }
 
 export function setRefreshToken(refresh) {
@@ -16,7 +18,7 @@ export function setRefreshToken(refresh) {
 
 export function removeToken() {
   sessionStorage.removeItem('refresh')
-  sessionStorage.removeItem('access')
+  return Cookies.remove('access')
 }
 
 export function updateLastTime() {

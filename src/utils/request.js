@@ -56,9 +56,8 @@ service.interceptors.response.use(
         return Promise.reject(new Error(resp.data.detail || error.message))
       } else {
         if (resp.config.url === process.env.VUE_APP_BASE_API + '/api/refresh/') {
-          MessageBox.confirm('You have been logged out, you can cancel to stay on this page, or log in again', 'Confirm logout', {
+          MessageBox.alert('You have been logged out, you must log in again', 'Need Re-Login', {
             confirmButtonText: 'Re-Login',
-            cancelButtonText: 'Cancel',
             type: 'warning'
           }).then(() => {
             store.dispatch('user/resetToken').then(() => {
@@ -69,17 +68,29 @@ service.interceptors.response.use(
           // 刷新token
           if (inExpiration()) {
             const refresh = getRefreshToken()
-            refreshToken({ 'refresh': refresh }).then(rsp => {
-              setAccessToken(rsp.access)
-              resp.config.url = resp.config.url.replace(process.env.VUE_APP_BASE_API, '')
-              return service(resp.config)
-            })
+            if (refresh) {
+              refreshToken({ 'refresh': refresh }).then(rsp => {
+                setAccessToken(rsp.access)
+                resp.config.url = resp.config.url.replace(process.env.VUE_APP_BASE_API, '')
+                return service(resp.config)
+              })
+            }
           } else {
             // 重新登录
-            store.dispatch('user/resetToken').then(() => {
-              console.log(333)
-              location.reload()
-            })
+            if (resp.config.url !== process.env.VUE_APP_BASE_API + '/user-admin/user-self/') {
+              MessageBox.alert('You have been logged out, you must log in again', 'Need Re-Login', {
+                confirmButtonText: 'Re-Login',
+                type: 'warning'
+              }).then(() => {
+                store.dispatch('user/resetToken').then(() => {
+                  location.reload()
+                })
+              })
+            } else {
+              store.dispatch('user/resetToken').then(() => {
+                location.reload()
+              })
+            }
           }
         }
       }
