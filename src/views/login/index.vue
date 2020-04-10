@@ -112,8 +112,12 @@ export default {
           this.$store.dispatch('user/login', this.loginForm).then(() => {
             this.$router.push({ path: this.redirect || '/' })
             this.loading = false
-          }).catch(() => {
+          }).catch((err) => {
             this.loading = false
+            this.$message({
+              type: 'error',
+              message: err
+            })
           })
         } else {
           console.log('error submit!!')

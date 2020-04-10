@@ -24,7 +24,6 @@ export function removeToken() {
 export function updateLastTime() {
   const now = new Date()
   sessionStorage.setItem('lastUpdateTime', now)
-  console.log('set update time')
 }
 
 export function removeLastTime() {
